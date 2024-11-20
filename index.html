@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(to right, #18a9cd, #9248db);
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+    }
+    .container {
+      width: 350px;
+      padding: 20px;
+      background: #ffffff;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    input[type="text"], input[type="datetime-local"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+    button {
+      padding: 10px;
+      background-color: #5c6bc0;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #3949ab;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #f1f3f4;
+      margin-bottom: 8px;
+      padding: 12px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.3s;
+    }
+    li.done .task-info::before {
+      content: '✔️';
+      margin-right: 8px;
+      color: #4caf50;
+      font-size: 16px;
+    }
+
+    .done{
+      background-color: #baf3bd;
+    } 
+
+    .task-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    .task-info span {
+      font-size: 14px;
+      color: #333;
+    }
+    .task-info small {
+      font-size: 12px;
+      color: #666;
+    }
+    .action-buttons button {
+      margin-left: 5px;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .done-button {
+      background-color: #4caf50;
+    }
+    .done-button:hover {
+      background-color: #388e3c;
+    }
+    .edit-button {
+      background-color: #f44336;
+    }
+    .edit-button:hover {
+      background-color: #d32f2f;
+    }
+    .delete-button {
+      background-color: #e53935;
+      color: #fff;
+    }
+    .delete-button:hover {
+      background-color: #c62828;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>To-Do List</h1>
+    <div class="input-container">
+      <input type="text" id="task" placeholder="Enter task" />
+      <input type="datetime-local" id="time" />
+      <button onclick="addTask()">Add Task</button>
+    </div>
+    <ul id="taskList"></ul>
+  </div>
+  <script>
+    let editMode = false;
+    let currentEditIndex = null;
+  
+    document.addEventListener("DOMContentLoaded", () => {
+      const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      tasks.forEach((task, index) => renderTask(task, index));
+    });
+  
+    function addTask() {
+      const taskInput = document.getElementById("task");
+      const timeInput = document.getElementById("time");
+      const task = taskInput.value.trim();
+      const time = timeInput.value;
+  
+      if (!task || !time) {
+        alert("Please enter both task and time.");
+        return;
+      }
+  
+      const taskData = { task, time, done: false };
+  
+      if (editMode) {
+        updateTask(taskData);
+      } else {
+        const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        tasks.push(taskData);
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        renderTask(taskData, tasks.length - 1);
+      }
+  
+      taskInput.value = "";
+      timeInput.value = "";
+      exitEditMode();
+    }
+  
+    function renderTask({ task, time, done }, index) {
+      const taskList = document.getElementById("taskList");
+      const li = document.createElement("li");
+      li.dataset.index = index;
+      if (done) li.classList.add("done");
+  
+      const taskInfo = document.createElement("div");
+      taskInfo.className = "task-info";
+      taskInfo.innerHTML = `<span>${task}</span><small>Due: ${new Date(time).toLocaleString()}</small>`;
+  
+      const actionButtons = document.createElement("div");
+      actionButtons.className = "action-buttons";
+  
+      // "Done" button (always present)
+      actionButtons.innerHTML = `<button class="done-button" onclick="markTaskDone(${index})">Done</button>`;
+  
+      // Conditionally add "Edit" button only if the task is not done
+      if (!done) {
+        actionButtons.innerHTML += `<button class="edit-button" onclick="editTask(${index})">Edit</button>`;
+      }
+  
+      // "Delete" button (always present)
+      actionButtons.innerHTML += `<button class="delete-button" onclick="deleteTask(${index})">Delete</button>`;
+  
+      li.appendChild(taskInfo);
+      li.appendChild(actionButtons);
+      taskList.appendChild(li);
+    }
+  
+    function markTaskDone(index) {
+      let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      tasks[index].done = !tasks[index].done;
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      reloadTasks();
+    }
+  
+    function editTask(index) {
+      const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      const taskData = tasks[index];
+  
+      document.getElementById("task").value = taskData.task;
+      document.getElementById("time").value = taskData.time;
+  
+      currentEditIndex = index;
+      editMode = true;
+      document.querySelector("button[onclick='addTask()']").textContent = "Update Task";
+    }
+  
+    function updateTask(updatedTask) {
+      const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      updatedTask.done = tasks[currentEditIndex].done;
+      tasks[currentEditIndex] = updatedTask;
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      reloadTasks();
+    }
+  
+    function deleteTask(index) {
+      let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      tasks.splice(index, 1);
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      reloadTasks();
+    }
+  
+    function reloadTasks() {
+      document.getElementById("taskList").innerHTML = "";
+      const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      tasks.forEach((task, index) => renderTask(task, index));
+    }
+  
+    function exitEditMode() {
+      editMode = false;
+      currentEditIndex = null;
+      document.querySelector("button[onclick='addTask()']").textContent = "Add Task";
+    }
+  </script>
+</body>
+</html>
