@@ -75,9 +75,9 @@
       font-size: 16px;
     }
 
-    .done{
+    .done {
       background-color: #baf3bd;
-    } 
+    }
 
     .task-info {
       display: flex;
@@ -123,6 +123,7 @@
 <body>
   <div class="container">
     <h1>To-Do List</h1>
+    <input type="text" id="search" placeholder="Search tasks..." oninput="searchTasks()" />
     <div class="input-container">
       <input type="text" id="task" placeholder="Enter task" />
       <input type="datetime-local" id="time" />
@@ -179,16 +180,11 @@
       const actionButtons = document.createElement("div");
       actionButtons.className = "action-buttons";
   
-      // "Done" button (always present)
-      actionButtons.innerHTML = `<button class="done-button" onclick="markTaskDone(${index})">Done</button>`;
-  
-      // Conditionally add "Edit" button only if the task is not done
-      if (!done) {
-        actionButtons.innerHTML += `<button class="edit-button" onclick="editTask(${index})">Edit</button>`;
-      }
-  
-      // "Delete" button (always present)
-      actionButtons.innerHTML += `<button class="delete-button" onclick="deleteTask(${index})">Delete</button>`;
+      actionButtons.innerHTML = `
+        <button class="done-button" onclick="markTaskDone(${index})">Done</button>
+        <button class="edit-button" onclick="editTask(${index})">Edit</button>
+        <button class="delete-button" onclick="deleteTask(${index})">Delete</button>
+      `;
   
       li.appendChild(taskInfo);
       li.appendChild(actionButtons);
@@ -239,6 +235,14 @@
       editMode = false;
       currentEditIndex = null;
       document.querySelector("button[onclick='addTask()']").textContent = "Add Task";
+    }
+  
+    function searchTasks() {
+      const searchTerm = document.getElementById("search").value.toLowerCase();
+      const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      const filteredTasks = tasks.filter(task => task.task.toLowerCase().includes(searchTerm));
+      document.getElementById("taskList").innerHTML = "";
+      filteredTasks.forEach((task, index) => renderTask(task, index));
     }
   </script>
 </body>
